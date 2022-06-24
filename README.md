@@ -1,0 +1,1 @@
+# nasuni-azure-analyticsconnector-manager
