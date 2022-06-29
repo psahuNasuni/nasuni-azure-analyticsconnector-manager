@@ -49,6 +49,10 @@ data "azurerm_subnet" "azure_subnet_name" {
   resource_group_name  = var.user_rg_name
 }
 
+data "tls_public_key" "private_key_pem" {
+  private_key_pem = file("${var.pem_key_path}")
+}
+
 resource "azurerm_public_ip" "nac_scheduler_public_ip" {
   name                = "${var.public_ip_name}-${random_id.unique_sg_id.dec}"
   location            = data.azurerm_resource_group.nac_scheduler_rg.location
@@ -130,7 +134,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
 
   admin_ssh_key {
     username   = "ubuntu"
-    public_key = file("${var.pem_key_file}")
+    public_key = data.tls_public_key.private_key_pem.public_key_openssh
   }
 }
 
@@ -164,7 +168,7 @@ resource "null_resource" "Install_Packages" {
       type        = "ssh"
       host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
       user        = "ubuntu"
-      private_key = file("${var.az_key}")
+      private_key = file("${var.pem_key_path}")
     }
   }
 
