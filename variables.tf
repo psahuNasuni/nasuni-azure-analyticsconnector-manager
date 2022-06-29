@@ -10,16 +10,10 @@ variable "region" {
   default     = "eastus"
 }
 
-variable "pem_key_file" {
+variable "pem_key_path" {
   description = "Key Name with extension and location"
   type        = string
-  default     = "~/.ssh/id_rsa.pub"
-}
-
-variable "az_key" {
-  description = "Key Name without extension and with location"
-  type        = string
-  default     = "~/.ssh/id_rsa"
+  default     = ""
 }
 
 variable "user_vnet_name" {
