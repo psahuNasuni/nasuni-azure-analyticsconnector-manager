@@ -27,6 +27,19 @@ locals {
       destination_port_ranges    = ["80"]
     }
 
+    https = {
+      name                       = "HTTPS"
+      description                = "HTTPS Rule"
+      priority                   = 320
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+      source_port_ranges         = ["0-65535"]
+      destination_port_ranges    = ["443"]
+    }
+
   }
 }
 
@@ -35,25 +48,28 @@ resource "random_id" "unique_sg_id" {
 }
 
 data "azurerm_resource_group" "nac_scheduler_rg" {
-  name = var.user_rg_name
+  name = var.user_resource_group_name
 }
 
 data "azurerm_virtual_network" "VnetToBeUsed" {
   name                = var.user_vnet_name
-  resource_group_name = var.user_rg_name
+  resource_group_name = var.user_resource_group_name
 }
 
 data "azurerm_subnet" "azure_subnet_name" {
   name                 = var.user_subnet_name
   virtual_network_name = var.user_vnet_name
-  resource_group_name  = var.user_rg_name
+  resource_group_name  = var.user_resource_group_name
 }
 
 data "tls_public_key" "private_key_pem" {
   private_key_pem = file("${var.pem_key_path}")
 }
 
+
+
 resource "azurerm_public_ip" "nac_scheduler_public_ip" {
+  count               = var.use_private_ip == "Y" ? 0 : 1
   name                = "${var.public_ip_name}-${random_id.unique_sg_id.dec}"
   location            = data.azurerm_resource_group.nac_scheduler_rg.location
   resource_group_name = data.azurerm_resource_group.nac_scheduler_rg.name
@@ -89,6 +105,7 @@ resource "azurerm_network_security_rule" "NACSchedulerSecurityGroupRule" {
 }
 
 resource "azurerm_network_interface" "nac_scheduler_nic_public" {
+  count               = var.use_private_ip != "Y" ? 1 : 0
   name                = "${var.network_interface_name}-${random_id.unique_sg_id.dec}"
   location            = data.azurerm_resource_group.nac_scheduler_rg.location
   resource_group_name = data.azurerm_resource_group.nac_scheduler_rg.name
@@ -97,12 +114,24 @@ resource "azurerm_network_interface" "nac_scheduler_nic_public" {
     name                          = "NACScheduler_nic_ip"
     subnet_id                     = data.azurerm_subnet.azure_subnet_name.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.nac_scheduler_public_ip.id
+    public_ip_address_id          = azurerm_public_ip.nac_scheduler_public_ip[count.index].id
   }
 }
 
+resource "azurerm_network_interface" "nac_scheduler_nic_private" {
+  count               = var.use_private_ip != "Y" ? 0 : 1
+  name                = "${var.network_interface_name}-${random_id.unique_sg_id.dec}"
+  location            = data.azurerm_resource_group.nac_scheduler_rg.location
+  resource_group_name = data.azurerm_resource_group.nac_scheduler_rg.name
+
+  ip_configuration {
+    name                          = "NACScheduler_nic_ip"
+    subnet_id                     = data.azurerm_subnet.azure_subnet_name.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
 resource "azurerm_network_interface_security_group_association" "nac_scheduler_nisg_association" {
-  network_interface_id      = azurerm_network_interface.nac_scheduler_nic_public.id
+  network_interface_id      = var.use_private_ip != "Y" ? azurerm_network_interface.nac_scheduler_nic_public[0].id : azurerm_network_interface.nac_scheduler_nic_private[0].id
   network_security_group_id = azurerm_network_security_group.NACSchedulerSecurityGroup.id
 }
 
@@ -111,7 +140,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
   location            = data.azurerm_resource_group.nac_scheduler_rg.location
   resource_group_name = data.azurerm_resource_group.nac_scheduler_rg.name
   network_interface_ids = [
-    azurerm_network_interface.nac_scheduler_nic_public.id
+    var.use_private_ip != "Y" ? azurerm_network_interface.nac_scheduler_nic_public[0].id : azurerm_network_interface.nac_scheduler_nic_private[0].id
   ]
   size = "Standard_D2s_v3"
 
@@ -161,12 +190,13 @@ resource "null_resource" "Install_Packages" {
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
+      "az login -u ${var.azure_subscription_user_name} -p ${var.azure_subscription_password}",
       "echo '@@@@@@@@@@@@@@@@@@ FINISHED - Install Packages @@@@@@@@@@@@@@@@@@'"
     ]
 
     connection {
       type        = "ssh"
-      host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
+      host        = var.use_private_ip != "Y" ? azurerm_linux_virtual_machine.NACScheduler.public_ip_address : azurerm_linux_virtual_machine.NACScheduler.private_ip_address
       user        = "ubuntu"
       private_key = file("${var.pem_key_path}")
     }
@@ -176,4 +206,42 @@ resource "null_resource" "Install_Packages" {
     azurerm_linux_virtual_machine.NACScheduler,
     azurerm_network_security_rule.NACSchedulerSecurityGroupRule
   ]
+}
+
+resource "null_resource" "Deploy_Web_UI" {
+  provisioner "remote-exec" {
+    inline = [
+      "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
+      "sudo apt install dos2unix -y",
+      "git clone https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
+      "sudo chmod 755 ${var.git_repo_ui}/SearchUI_Web/*",
+      "cd ${var.git_repo_ui}",
+      "pwd",
+      "UI_TFVARS_FILE=ui_tfvars.tfvars",
+      "rm -rf $UI_TFVARS_FILE",
+      "echo 'acs_key_vault=\"'\"${var.acs_key_vault}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
+      "az login -u ${var.azure_subscription_user_name} -p ${var.azure_subscription_password}",
+      "terraform init",
+      "terraform apply -var-file=$UI_TFVARS_FILE -auto-approve",
+      "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'"
+    ]
+  }
+
+  connection {
+    type        = "ssh"
+    host        = var.use_private_ip != "Y" ? azurerm_linux_virtual_machine.NACScheduler.public_ip_address : azurerm_linux_virtual_machine.NACScheduler.private_ip_address
+    user        = "ubuntu"
+    private_key = file("${var.pem_key_path}")
+  }
+
+  depends_on = [
+    azurerm_linux_virtual_machine.NACScheduler,
+    azurerm_network_security_rule.NACSchedulerSecurityGroupRule,
+    null_resource.Install_Packages
+  ]
+}
+
+output "NACScheduler_IP" {
+  value = "ssh -i ${var.pem_key_path} ubuntu@${azurerm_linux_virtual_machine.NACScheduler.public_ip_address}"
 }
