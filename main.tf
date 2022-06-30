@@ -27,6 +27,19 @@ locals {
       destination_port_ranges    = ["80"]
     }
 
+    https = {
+      name                       = "HTTPS"
+      description                = "HTTPS Rule"
+      priority                   = 310
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+      source_port_ranges         = ["0-65535"]
+      destination_port_ranges    = ["443"]
+    }
+
   }
 }
 
@@ -35,19 +48,24 @@ resource "random_id" "unique_sg_id" {
 }
 
 data "azurerm_resource_group" "nac_scheduler_rg" {
-  name = var.user_rg_name
+  name = var.user_resource_group_name
 }
 
 data "azurerm_virtual_network" "VnetToBeUsed" {
   name                = var.user_vnet_name
-  resource_group_name = var.user_rg_name
+  resource_group_name = var.user_resource_group_name
 }
 
 data "azurerm_subnet" "azure_subnet_name" {
   name                 = var.user_subnet_name
   virtual_network_name = var.user_vnet_name
-  resource_group_name  = var.user_rg_name
+  resource_group_name  = var.user_resource_group_name
 }
+
+data "tls_public_key" "private_key_pem" {
+  private_key_pem = file("${var.pem_key_path}")
+}
+
 
 resource "azurerm_public_ip" "nac_scheduler_public_ip" {
   name                = "${var.public_ip_name}-${random_id.unique_sg_id.dec}"
@@ -130,7 +148,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
 
   admin_ssh_key {
     username   = "ubuntu"
-    public_key = file("${var.pem_key_file}")
+    public_key = data.tls_public_key.private_key_pem.public_key_openssh
   }
 }
 
@@ -157,6 +175,7 @@ resource "null_resource" "Install_Packages" {
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
+      "az login -u ${var.azure_subscription_user_name} -p ${var.azure_subscription_password}",
       "echo '@@@@@@@@@@@@@@@@@@ FINISHED - Install Packages @@@@@@@@@@@@@@@@@@'"
     ]
 
@@ -164,7 +183,7 @@ resource "null_resource" "Install_Packages" {
       type        = "ssh"
       host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
       user        = "ubuntu"
-      private_key = file("${var.az_key}")
+      private_key = file("${var.pem_key_path}")
     }
   }
 
@@ -173,3 +192,51 @@ resource "null_resource" "Install_Packages" {
     azurerm_network_security_rule.NACSchedulerSecurityGroupRule
   ]
 }
+
+# resource "null_resource" "Deploy_Web_UI" {
+#  provisioner "remote-exec" {
+#     inline = [
+#       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED - Inastall WEB Server            @@@@@@@@@@@@@@@@@@@@@@@'",
+#       "sudo apt update",
+#       "sudo apt install apache2 -y",
+#       "sudo ufw app list",
+#       "sudo ufw allow 'Apache'",
+#       "sudo service apache2 restart",
+#       "sudo apt install dos2unix -y",
+#       "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Inastall WEB Server             @@@@@@@@@@@@@@@@@@@@@@@'",
+#       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
+#       "git clone https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
+#       "sudo chmod 755 ${var.git_repo_ui}/SearchUI_Web/*",
+#       "cd ${var.git_repo_ui}",
+#       "pwd",
+#       "UI_TFVARS_FILE=ui_tfvars.tfvars",
+#       "az login -u ${var.azure_subscription_user_name} -p ${var.azure_subscription_password}",
+#       "terraform init",
+#       "terraform apply -var-file=$UI_TFVARS_FILE -auto-approve",
+#       "cd SearchUI_Web",
+#        "sudo rm -rf /var/www/html/*",
+#        "sudo cp -R * /var/www/html/",
+#        "sudo chmod 755 /var/www/html/*",
+#       "sudo service apache2 restart",
+#       "echo Nasuni Cognitive Search Web portal: http://$(curl ifconfig.me)/index.html",
+#       "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'"
+#       ]
+#   }
+
+#     connection {
+#       type        = "ssh"
+#       host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
+#       user        = "ubuntu"
+#       private_key = file("${var.pem_key_path}")
+#     }
+  
+#   depends_on = [
+#     azurerm_linux_virtual_machine.NACScheduler,
+#     azurerm_network_security_rule.NACSchedulerSecurityGroupRule,
+#   ]
+# }
+
+output "NACScheduler_IP" {
+  value = "ssh -i ${var.pem_key_path} ubuntu@${azurerm_linux_virtual_machine.NACScheduler.public_ip_address}"
+}
+

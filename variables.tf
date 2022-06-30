@@ -1,4 +1,4 @@
-variable "user_rg_name" {
+variable "user_resource_group_name" {
   description = "Resouce group name for Azure Virtual Machine"
   type        = string
   default     = ""
@@ -10,16 +10,10 @@ variable "region" {
   default     = "eastus"
 }
 
-variable "pem_key_file" {
+variable "pem_key_path" {
   description = "Key Name with extension and location"
   type        = string
-  default     = "~/.ssh/id_rsa.pub"
-}
-
-variable "az_key" {
-  description = "Key Name without extension and with location"
-  type        = string
-  default     = "~/.ssh/id_rsa"
+  default     = ""
 }
 
 variable "user_vnet_name" {
@@ -54,6 +48,18 @@ variable "network_interface_name" {
 
 variable "nac_scheduler_name" {
   description = "NAC Scheduler Virtual Machine Name"
+  type        = string
+  default     = ""
+}
+
+variable "azure_subscription_user_name" {
+  description = "Azure Subscription Scheduler User Name"
+  type        = string
+  default     = ""
+}
+
+variable "azure_subscription_password" {
+  description = "Azure Subscription Password"
   type        = string
   default     = ""
 }
