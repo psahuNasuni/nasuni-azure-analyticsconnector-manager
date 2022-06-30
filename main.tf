@@ -30,7 +30,7 @@ locals {
     https = {
       name                       = "HTTPS"
       description                = "HTTPS Rule"
-      priority                   = 310
+      priority                   = 320
       direction                  = "Inbound"
       access                     = "Allow"
       protocol                   = "Tcp"
@@ -193,50 +193,40 @@ resource "null_resource" "Install_Packages" {
   ]
 }
 
-# resource "null_resource" "Deploy_Web_UI" {
-#  provisioner "remote-exec" {
-#     inline = [
-#       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED - Inastall WEB Server            @@@@@@@@@@@@@@@@@@@@@@@'",
-#       "sudo apt update",
-#       "sudo apt install apache2 -y",
-#       "sudo ufw app list",
-#       "sudo ufw allow 'Apache'",
-#       "sudo service apache2 restart",
-#       "sudo apt install dos2unix -y",
-#       "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Inastall WEB Server             @@@@@@@@@@@@@@@@@@@@@@@'",
-#       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
-#       "git clone https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
-#       "sudo chmod 755 ${var.git_repo_ui}/SearchUI_Web/*",
-#       "cd ${var.git_repo_ui}",
-#       "pwd",
-#       "UI_TFVARS_FILE=ui_tfvars.tfvars",
-#       "az login -u ${var.azure_subscription_user_name} -p ${var.azure_subscription_password}",
-#       "terraform init",
-#       "terraform apply -var-file=$UI_TFVARS_FILE -auto-approve",
-#       "cd SearchUI_Web",
-#        "sudo rm -rf /var/www/html/*",
-#        "sudo cp -R * /var/www/html/",
-#        "sudo chmod 755 /var/www/html/*",
-#       "sudo service apache2 restart",
-#       "echo Nasuni Cognitive Search Web portal: http://$(curl ifconfig.me)/index.html",
-#       "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'"
-#       ]
-#   }
+resource "null_resource" "Deploy_Web_UI" {
+  provisioner "remote-exec" {
+    inline = [
+      "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
+      "sudo apt install dos2unix -y",
+      "git clone https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
+      "sudo chmod 755 ${var.git_repo_ui}/SearchUI_Web/*",
+      "cd ${var.git_repo_ui}",
+      "pwd",
+      "UI_TFVARS_FILE=ui_tfvars.tfvars",
+      "rm -rf $UI_TFVARS_FILE",
+      "echo 'acs_key_vault=\"'\"${var.acs_key_vault}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
+      "az login -u ${var.azure_subscription_user_name} -p ${var.azure_subscription_password}",
+      "terraform init",
+      "terraform apply -var-file=$UI_TFVARS_FILE -auto-approve",
+      "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'"
+    ]
+  }
 
-#     connection {
-#       type        = "ssh"
-#       host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
-#       user        = "ubuntu"
-#       private_key = file("${var.pem_key_path}")
-#     }
-  
-#   depends_on = [
-#     azurerm_linux_virtual_machine.NACScheduler,
-#     azurerm_network_security_rule.NACSchedulerSecurityGroupRule,
-#   ]
-# }
+  connection {
+    type        = "ssh"
+    host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
+    user        = "ubuntu"
+    private_key = file("${var.pem_key_path}")
+  }
+
+  depends_on = [
+    azurerm_linux_virtual_machine.NACScheduler,
+    azurerm_network_security_rule.NACSchedulerSecurityGroupRule,
+    null_resource.Install_Packages
+  ]
+}
 
 output "NACScheduler_IP" {
   value = "ssh -i ${var.pem_key_path} ubuntu@${azurerm_linux_virtual_machine.NACScheduler.public_ip_address}"
 }
-

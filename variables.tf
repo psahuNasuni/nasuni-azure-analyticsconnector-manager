@@ -63,3 +63,23 @@ variable "azure_subscription_password" {
   type        = string
   default     = ""
 }
+
+variable "github_organization" {
+  description = "github organization used by Users, default is nasuni-labs"
+  default     = "psahuNasuni"
+}
+
+variable "git_repo_ui" {
+  description = "git_repo_ui specific to certain repos"
+  default     = "nasuni-azure-userinterface"
+}
+
+variable "acs_resource_group" {
+  description = "git_repo_ui specific to certain repos"
+  default     = ""
+}
+
+variable "acs_key_vault" {
+  description = "git_repo_ui specific to certain repos"
+  default     = ""
+}
