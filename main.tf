@@ -243,5 +243,5 @@ resource "null_resource" "Deploy_Web_UI" {
 }
 
 output "NACScheduler_IP" {
-  value = "ssh -i ${var.pem_key_path} ubuntu@${azurerm_linux_virtual_machine.NACScheduler.public_ip_address}"
+  value = "ssh -i ${var.pem_key_path} ubuntu@${var.use_private_ip != "Y" ? azurerm_linux_virtual_machine.NACScheduler.public_ip_address : azurerm_linux_virtual_machine.NACScheduler.private_ip_address}"
 }
