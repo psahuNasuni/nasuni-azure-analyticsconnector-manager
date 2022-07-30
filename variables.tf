@@ -1,4 +1,4 @@
-variable "user_resource_group_name" {
+variable "nac_resource_group_name" {
   description = "Resouce group name for Azure Virtual Machine"
   type        = string
   default     = ""
@@ -49,19 +49,7 @@ variable "network_interface_name" {
 variable "nac_scheduler_name" {
   description = "NAC Scheduler Virtual Machine Name"
   type        = string
-  default     = ""
-}
-
-variable "azure_subscription_user_name" {
-  description = "Azure Subscription Scheduler User Name"
-  type        = string
-  default     = ""
-}
-
-variable "azure_subscription_password" {
-  description = "Azure Subscription Password"
-  type        = string
-  default     = ""
+  default     = "NACScheduler"
 }
 
 variable "github_organization" {
@@ -87,5 +75,10 @@ variable "acs_key_vault" {
 variable "use_private_ip" {
   description = "Use Private IP"
   type        = string
+  default     = ""
+}
+
+variable "subscription-id" {
+  description = "Subscription id of azure account"
   default     = ""
 }

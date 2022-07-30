@@ -47,26 +47,28 @@ resource "random_id" "unique_sg_id" {
   byte_length = 2
 }
 
+data "azurerm_subscription" "primary" {
+  subscription_id = var.subscription-id
+}
+
 data "azurerm_resource_group" "nac_scheduler_rg" {
-  name = var.user_resource_group_name
+  name = var.nac_resource_group_name
 }
 
 data "azurerm_virtual_network" "VnetToBeUsed" {
   name                = var.user_vnet_name
-  resource_group_name = var.user_resource_group_name
+  resource_group_name = var.nac_resource_group_name
 }
 
 data "azurerm_subnet" "azure_subnet_name" {
   name                 = var.user_subnet_name
   virtual_network_name = var.user_vnet_name
-  resource_group_name  = var.user_resource_group_name
+  resource_group_name  = var.nac_resource_group_name
 }
 
 data "tls_public_key" "private_key_pem" {
   private_key_pem = file("${var.pem_key_path}")
 }
-
-
 
 resource "azurerm_public_ip" "nac_scheduler_public_ip" {
   count               = var.use_private_ip == "Y" ? 0 : 1
@@ -149,7 +151,9 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
-
+  identity {
+    type = "SystemAssigned"
+  }
   source_image_reference {
     publisher = "Canonical"
     offer     = "UbuntuServer"
@@ -187,10 +191,12 @@ resource "null_resource" "Install_Packages" {
       "sudo apt install python3-testresources -y",
       "sudo apt install python3-pip -y",
       "sudo pip3 install boto3",
+      "pip3 install --upgrade setuptools",
+      "pip3 install --upgrade pip",
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
-      "az login -u ${var.azure_subscription_user_name} -p ${var.azure_subscription_password}",
+      "az login --identity",
       "echo '@@@@@@@@@@@@@@@@@@ FINISHED - Install Packages @@@@@@@@@@@@@@@@@@'"
     ]
 
@@ -204,7 +210,8 @@ resource "null_resource" "Install_Packages" {
 
   depends_on = [
     azurerm_linux_virtual_machine.NACScheduler,
-    azurerm_network_security_rule.NACSchedulerSecurityGroupRule
+    azurerm_network_security_rule.NACSchedulerSecurityGroupRule,
+    azurerm_role_assignment.add_role_nac_vm
   ]
 }
 
@@ -221,7 +228,6 @@ resource "null_resource" "Deploy_Web_UI" {
       "rm -rf $UI_TFVARS_FILE",
       "echo 'acs_key_vault=\"'\"${var.acs_key_vault}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
-      "az login -u ${var.azure_subscription_user_name} -p ${var.azure_subscription_password}",
       "terraform init",
       "terraform apply -var-file=$UI_TFVARS_FILE -auto-approve",
       "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'"
@@ -240,6 +246,12 @@ resource "null_resource" "Deploy_Web_UI" {
     azurerm_network_security_rule.NACSchedulerSecurityGroupRule,
     null_resource.Install_Packages
   ]
+}
+
+resource "azurerm_role_assignment" "add_role_nac_vm" {
+  scope                = data.azurerm_subscription.primary.id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_linux_virtual_machine.NACScheduler.identity.0.principal_id
 }
 
 output "NACScheduler_IP" {
