@@ -257,6 +257,13 @@ resource "azurerm_role_assignment" "add_role_nac_vm" {
   principal_id         = azurerm_linux_virtual_machine.NACScheduler.identity.0.principal_id
 }
 
+resource "null_resource" "NACScheduler_IP" {
+  provisioner "local-exec" {
+    command = var.use_private_ip != "Y" ? "echo ${azurerm_linux_virtual_machine.NACScheduler.public_ip_address} > NACScheduler_IP.txt" : "echo ${azurerm_linux_virtual_machine.NACScheduler.public_ip_address} > NACScheduler_IP.txt"
+  }
+  depends_on = [azurerm_linux_virtual_machine.NACScheduler]
+}
+
 output "NACScheduler_IP" {
   value = "ssh -i ${var.pem_key_path} ubuntu@${var.use_private_ip != "Y" ? azurerm_linux_virtual_machine.NACScheduler.public_ip_address : azurerm_linux_virtual_machine.NACScheduler.private_ip_address}"
 }
