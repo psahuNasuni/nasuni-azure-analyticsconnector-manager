@@ -75,7 +75,7 @@ variable "acs_key_vault" {
 variable "use_private_ip" {
   description = "Use Private IP"
   type        = string
-  default     = ""
+  default     = "N"
 }
 
 variable "subscription_id" {
