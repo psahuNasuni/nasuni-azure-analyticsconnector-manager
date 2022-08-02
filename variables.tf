@@ -83,3 +83,14 @@ variable "acs_key_vault" {
   description = "git_repo_ui specific to certain repos"
   default     = ""
 }
+
+variable "use_private_ip" {
+  description = "Use Private IP"
+  type        = string
+  default     = "N"
+}
+
+variable "subscription_id" {
+  description = "Subscription id of azure account"
+  default     = ""
+}
