@@ -173,7 +173,7 @@ resource "null_resource" "Install_Packages" {
       "sudo apt install python3-pip -y",
       "sudo pip3 install boto3",
       "sudo pip3 install --upgrade pip",
-      "sudo pip3 install --upgrade setuptools"
+      "sudo pip3 install --upgrade setuptools",
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
