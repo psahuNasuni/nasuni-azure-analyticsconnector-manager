@@ -48,7 +48,7 @@ resource "random_id" "unique_sg_id" {
 }
 
 data "azurerm_subscription" "primary" {
-  subscription_id = var.subscription-id
+  subscription_id = var.subscription_id
 }
 
 data "azurerm_resource_group" "nac_scheduler_rg" {
@@ -191,8 +191,8 @@ resource "null_resource" "Install_Packages" {
       "sudo apt install python3-testresources -y",
       "sudo apt install python3-pip -y",
       "sudo pip3 install boto3",
-      "pip3 install --upgrade setuptools",
-      "pip3 install --upgrade pip",
+      "sudo pip3 install --upgrade pip",
+      "sudo pip3 install --upgrade setuptools",
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
@@ -220,7 +220,7 @@ resource "null_resource" "Deploy_Web_UI" {
     inline = [
       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
       "sudo apt install dos2unix -y",
-      "git clone https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
+      "git clone -b test https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
       "sudo chmod 755 ${var.git_repo_ui}/SearchUI_Web/*",
       "cd ${var.git_repo_ui}",
       "pwd",
@@ -228,6 +228,9 @@ resource "null_resource" "Deploy_Web_UI" {
       "rm -rf $UI_TFVARS_FILE",
       "echo 'acs_key_vault=\"'\"${var.acs_key_vault}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'INFO ::: Installing Python Dependencies'",
+      "COMMAND='pip3 install  --target=./SearchFunction/.python_packages/lib/site-packages  -r ./SearchFunction/requirements.txt'",
+      "$COMMAND",
       "terraform init",
       "terraform apply -var-file=$UI_TFVARS_FILE -auto-approve",
       "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'"

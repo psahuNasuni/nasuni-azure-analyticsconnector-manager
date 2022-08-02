@@ -78,7 +78,7 @@ variable "use_private_ip" {
   default     = ""
 }
 
-variable "subscription-id" {
+variable "subscription_id" {
   description = "Subscription id of azure account"
   default     = ""
 }
