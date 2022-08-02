@@ -52,13 +52,13 @@ variable "nac_scheduler_name" {
   default     = ""
 }
 
-variable "azure_subscription_user_name" {
+variable "azure_username" {
   description = "Azure Subscription Scheduler User Name"
   type        = string
   default     = ""
 }
 
-variable "azure_subscription_password" {
+variable "azure_password" {
   description = "Azure Subscription Password"
   type        = string
   default     = ""
