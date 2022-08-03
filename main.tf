@@ -197,41 +197,41 @@ resource "null_resource" "Install_Packages" {
   ]
 }
 
-resource "null_resource" "Deploy_Web_UI" {
-  provisioner "remote-exec" {
-    inline = [
-      "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
-      "sudo apt install dos2unix -y",
-      "git clone https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
-      "sudo chmod 755 ${var.git_repo_ui}/SearchUI_Web/*",
-      "cd ${var.git_repo_ui}",
-      "pwd",
-      "UI_TFVARS_FILE=ui_tfvars.tfvars",
-      "rm -rf $UI_TFVARS_FILE",
-      "echo 'acs_key_vault=\"'\"${var.acs_key_vault}\"'\"' >>$UI_TFVARS_FILE",
-      "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
-      "az login -u ${var.azure_username} -p ${var.azure_password}",
-      "COMMAND='pip3 install  --target=./SearchFunction/.python_packages/lib/site-packages  -r ./SearchFunction/requirements.txt'",
-      "$COMMAND",
-      "terraform init",
-      "terraform apply -var-file=$UI_TFVARS_FILE -auto-approve",
-      "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'"
-    ]
-  }
+# resource "null_resource" "Deploy_Web_UI" {
+#   provisioner "remote-exec" {
+#     inline = [
+#       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
+#       "sudo apt install dos2unix -y",
+#       "git clone https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
+#       "sudo chmod 755 ${var.git_repo_ui}/SearchUI_Web/*",
+#       "cd ${var.git_repo_ui}",
+#       "pwd",
+#       "UI_TFVARS_FILE=ui_tfvars.tfvars",
+#       "rm -rf $UI_TFVARS_FILE",
+#       "echo 'acs_key_vault=\"'\"${var.acs_key_vault}\"'\"' >>$UI_TFVARS_FILE",
+#       "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
+#       "az login -u ${var.azure_username} -p ${var.azure_password}",
+#       "COMMAND='pip3 install  --target=./SearchFunction/.python_packages/lib/site-packages  -r ./SearchFunction/requirements.txt'",
+#       "$COMMAND",
+#       "terraform init",
+#       "terraform apply -var-file=$UI_TFVARS_FILE -auto-approve",
+#       "echo '@@@@@@@@@@@@@@@@@@@@@ FINISHED - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'"
+#     ]
+#   }
 
-  connection {
-    type        = "ssh"
-    host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
-    user        = "ubuntu"
-    private_key = file("${var.pem_key_path}")
-  }
+#   connection {
+#     type        = "ssh"
+#     host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
+#     user        = "ubuntu"
+#     private_key = file("${var.pem_key_path}")
+#   }
 
-  depends_on = [
-    azurerm_linux_virtual_machine.NACScheduler,
-    azurerm_network_security_rule.NACSchedulerSecurityGroupRule,
-    null_resource.Install_Packages
-  ]
-}
+#   depends_on = [
+#     azurerm_linux_virtual_machine.NACScheduler,
+#     azurerm_network_security_rule.NACSchedulerSecurityGroupRule,
+#     null_resource.Install_Packages
+#   ]
+# }
 
 resource "null_resource" "NACScheduler_IP" {
   provisioner "local-exec" {
