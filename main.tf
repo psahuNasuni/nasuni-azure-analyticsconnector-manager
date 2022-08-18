@@ -206,7 +206,7 @@ resource "null_resource" "Deploy_Web_UI" {
       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
       "sudo apt install dos2unix -y",
       "git clone https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
-      "sudo chmod 755 ${var.git_repo_ui}/SearchUI_Web/*",
+      "sudo chmod 755 ${var.git_repo_ui}/ -R",
       "cd ${var.git_repo_ui}",
       "pwd",
       "UI_TFVARS_FILE=ui_tfvars.tfvars",
