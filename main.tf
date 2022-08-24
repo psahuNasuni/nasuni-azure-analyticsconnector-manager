@@ -211,7 +211,7 @@ resource "null_resource" "Deploy_Web_UI" {
       "pwd",
       "UI_TFVARS_FILE=ui_tfvars.tfvars",
       "rm -rf $UI_TFVARS_FILE",
-      "echo 'acs_key_vault=\"'\"${var.acs_key_vault}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'acs_admin_app_config_name=\"'\"${var.acs_admin_app_config_name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'INFO ::: Installing Python Dependencies'",
       "COMMAND='pip3 install  --target=./SearchFunction/.python_packages/lib/site-packages  -r ./SearchFunction/requirements.txt'",

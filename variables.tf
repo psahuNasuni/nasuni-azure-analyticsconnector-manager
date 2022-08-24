@@ -79,8 +79,9 @@ variable "acs_resource_group" {
   default     = ""
 }
 
-variable "acs_key_vault" {
-  description = "git_repo_ui specific to certain repos"
+variable "acs_admin_app_config_name" {
+  description = "Azure acs_admin_app_config_name"
+  type        = string
   default     = ""
 }
 
