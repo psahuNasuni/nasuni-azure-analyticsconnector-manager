@@ -70,12 +70,16 @@ variable "github_organization" {
 }
 
 variable "git_repo_ui" {
-  description = "git_repo_ui specific to certain repos"
+  description = "git_repo_ui for userinterface specific repo"
   default     = "nasuni-azure-userinterface"
 }
 
+variable "git_branch" {
+  default=""
+}
+
 variable "acs_resource_group" {
-  description = "git_repo_ui specific to certain repos"
+  description = "acs resource group"
   default     = ""
 }
 
