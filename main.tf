@@ -212,6 +212,7 @@ resource "null_resource" "Deploy_Web_UI" {
       "UI_TFVARS_FILE=ui_tfvars.tfvars",
       "rm -rf $UI_TFVARS_FILE",
       "echo 'acs_admin_app_config_name=\"'\"${var.acs_admin_app_config_name}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'nac_scheduler_name=\"'\"${azurerm_linux_virtual_machine.NACScheduler.name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'INFO ::: Installing Python Dependencies'",
       "COMMAND='pip3 install  --target=./SearchFunction/.python_packages/lib/site-packages  -r ./SearchFunction/requirements.txt'",
