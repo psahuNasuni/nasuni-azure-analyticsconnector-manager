@@ -68,6 +68,7 @@ data "tls_public_key" "private_key_pem" {
 
 
 resource "azurerm_public_ip" "nac_scheduler_public_ip" {
+  count               = var.use_private_ip == "Y" ? 0 : 1
   name                = "${var.public_ip_name}-${random_id.unique_sg_id.dec}"
   location            = data.azurerm_resource_group.nac_scheduler_rg.location
   resource_group_name = data.azurerm_resource_group.nac_scheduler_rg.name
@@ -103,6 +104,7 @@ resource "azurerm_network_security_rule" "NACSchedulerSecurityGroupRule" {
 }
 
 resource "azurerm_network_interface" "nac_scheduler_nic_public" {
+  count               = var.use_private_ip != "Y" ? 1 : 0
   name                = "${var.network_interface_name}-${random_id.unique_sg_id.dec}"
   location            = data.azurerm_resource_group.nac_scheduler_rg.location
   resource_group_name = data.azurerm_resource_group.nac_scheduler_rg.name
@@ -111,12 +113,25 @@ resource "azurerm_network_interface" "nac_scheduler_nic_public" {
     name                          = "NACScheduler_nic_ip"
     subnet_id                     = data.azurerm_subnet.azure_subnet_name.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.nac_scheduler_public_ip.id
+    public_ip_address_id          = azurerm_public_ip.nac_scheduler_public_ip[count.index].id
+  }
+}
+
+resource "azurerm_network_interface" "nac_scheduler_nic_private" {
+  count               = var.use_private_ip != "Y" ? 0 : 1
+  name                = "${var.network_interface_name}-${random_id.unique_sg_id.dec}"
+  location            = data.azurerm_resource_group.nac_scheduler_rg.location
+  resource_group_name = data.azurerm_resource_group.nac_scheduler_rg.name
+
+  ip_configuration {
+    name                          = "NACScheduler_nic_ip"
+    subnet_id                     = data.azurerm_subnet.azure_subnet_name.id
+    private_ip_address_allocation = "Dynamic"
   }
 }
 
 resource "azurerm_network_interface_security_group_association" "nac_scheduler_nisg_association" {
-  network_interface_id      = azurerm_network_interface.nac_scheduler_nic_public.id
+  network_interface_id      = var.use_private_ip != "Y" ? azurerm_network_interface.nac_scheduler_nic_public[0].id : azurerm_network_interface.nac_scheduler_nic_private[0].id
   network_security_group_id = azurerm_network_security_group.NACSchedulerSecurityGroup.id
 }
 
@@ -125,7 +140,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
   location            = data.azurerm_resource_group.nac_scheduler_rg.location
   resource_group_name = data.azurerm_resource_group.nac_scheduler_rg.name
   network_interface_ids = [
-    azurerm_network_interface.nac_scheduler_nic_public.id
+    var.use_private_ip != "Y" ? azurerm_network_interface.nac_scheduler_nic_public[0].id : azurerm_network_interface.nac_scheduler_nic_private[0].id
   ]
   size = "Standard_D2s_v3"
 
@@ -188,7 +203,7 @@ resource "null_resource" "Install_Packages" {
 
     connection {
       type        = "ssh"
-      host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
+      host        = var.use_private_ip != "Y" ? azurerm_linux_virtual_machine.NACScheduler.public_ip_address : azurerm_linux_virtual_machine.NACScheduler.private_ip_address
       user        = "ubuntu"
       private_key = file("${var.pem_key_path}")
     }
@@ -225,7 +240,7 @@ resource "null_resource" "Deploy_Web_UI" {
 
   connection {
     type        = "ssh"
-    host        = azurerm_linux_virtual_machine.NACScheduler.public_ip_address
+    host        = var.use_private_ip != "Y" ? azurerm_linux_virtual_machine.NACScheduler.public_ip_address : azurerm_linux_virtual_machine.NACScheduler.private_ip_address
     user        = "ubuntu"
     private_key = file("${var.pem_key_path}")
   }
@@ -239,11 +254,11 @@ resource "null_resource" "Deploy_Web_UI" {
 
 resource "null_resource" "NACScheduler_IP" {
   provisioner "local-exec" {
-    command = var.use_private_ip != "Y" ? "echo ${azurerm_linux_virtual_machine.NACScheduler.public_ip_address} > NACScheduler_IP.txt" : "echo ${azurerm_linux_virtual_machine.NACScheduler.public_ip_address} > NACScheduler_IP.txt"
+    command = var.use_private_ip != "Y" ? "echo ${azurerm_linux_virtual_machine.NACScheduler.public_ip_address} > NACScheduler_IP.txt" : "echo ${azurerm_linux_virtual_machine.NACScheduler.private_ip_address} > NACScheduler_IP.txt"
   }
   depends_on = [azurerm_linux_virtual_machine.NACScheduler]
 }
 
 output "NACScheduler_IP" {
-  value = "ssh -i ${var.pem_key_path} ubuntu@${azurerm_linux_virtual_machine.NACScheduler.public_ip_address}"
+  value = var.use_private_ip != "Y" ? "ssh -i ${var.pem_key_path} ubuntu@${azurerm_linux_virtual_machine.NACScheduler.public_ip_address}" : "ssh -i ${var.pem_key_path} ubuntu@${azurerm_linux_virtual_machine.NACScheduler.private_ip_address}"
 }
