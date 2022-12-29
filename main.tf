@@ -233,7 +233,7 @@ resource "null_resource" "Deploy_Web_UI" {
       "echo 'user_vnet_name=\"'\"${var.user_vnet_name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'user_subnet_name=\"'\"${var.user_subnet_name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'use_private_ip=\"'\"${var.use_private_ip}\"'\"' >>$UI_TFVARS_FILE",
-      "echo 'search_outbound_subnet=\"'${var.search_outbound_subnet}'\"' >>$UI_TFVARS_FILE",
+      "echo 'search_outbound_subnet=${var.search_outbound_subnet}' >>$UI_TFVARS_FILE",
       "echo 'INFO ::: Installing Python Dependencies'",
       "COMMAND='pip3 install  --target=./SearchFunction/.python_packages/lib/site-packages  -r ./SearchFunction/requirements.txt'",
       "$COMMAND",
