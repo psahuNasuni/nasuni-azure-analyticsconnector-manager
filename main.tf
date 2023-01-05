@@ -194,6 +194,7 @@ resource "null_resource" "Install_Packages" {
       "sudo pip3 install boto3",
       "sudo pip3 install --upgrade pip",
       "sudo pip3 install --upgrade setuptools",
+      "sudo pip3 install --default-timeout=100 future",
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
