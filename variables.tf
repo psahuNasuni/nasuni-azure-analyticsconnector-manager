@@ -99,3 +99,9 @@ variable "search_outbound_subnet" {
   description = "Available subnet name in Virtual Network for outbound traffic integration"
   type        = string
 }
+
+variable "cred_vault" {
+  description = "Credential Key Vault Name"
+  type        = string
+  default     = ""
+}

@@ -165,6 +165,18 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
     username   = "ubuntu"
     public_key = data.tls_public_key.private_key_pem.public_key_openssh
   }
+
+  provisioner "file" {
+    source      = "./token.txt"
+    destination = "./token.txt"
+  }
+
+  connection {
+    type        = "ssh"
+    host        = var.use_private_ip != "Y" ? azurerm_linux_virtual_machine.NACScheduler.public_ip_address : azurerm_linux_virtual_machine.NACScheduler.private_ip_address
+    user        = "ubuntu"
+    private_key = file("${var.pem_key_path}")
+  }
 }
 
 resource "null_resource" "Install_Packages" {
@@ -199,7 +211,10 @@ resource "null_resource" "Install_Packages" {
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
-      "az login -u ${var.azure_username} -p ${var.azure_password}",
+      "token=$(cat token.txt)",
+      "root_user=$(curl -H 'Authorization: Bearer $token' -X GET 'https://${var.cred_vault}.vault.azure.net/secrets/root-user?api-version=2016-10-01' | jq -r .value)",
+      "root_password=$(curl -H 'Authorization: Bearer $token' -X GET 'https://${var.cred_vault}.vault.azure.net/secrets/root-password?api-version=2016-10-01' | jq -r .value)",
+      "az login -u $root_user -p $root_password",
       "echo '@@@@@@@@@@@@@@@@@@ FINISHED - Install Packages @@@@@@@@@@@@@@@@@@'"
     ]
 
