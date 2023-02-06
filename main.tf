@@ -211,10 +211,7 @@ resource "null_resource" "Install_Packages" {
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
-      "token=$(cat token.txt)",
-      "root_user=$(curl -H 'Authorization: Bearer $token' -X GET 'https://${var.cred_vault}.vault.azure.net/secrets/root-user?api-version=2016-10-01' | jq -r .value)",
-      "root_password=$(curl -H 'Authorization: Bearer $token' -X GET 'https://${var.cred_vault}.vault.azure.net/secrets/root-password?api-version=2016-10-01' | jq -r .value)",
-      "az login -u $root_user -p $root_password",
+      "az login -u ${var.azure_username} -p ${var.azure_password}",
       "echo '@@@@@@@@@@@@@@@@@@ FINISHED - Install Packages @@@@@@@@@@@@@@@@@@'"
     ]
 
