@@ -34,14 +34,14 @@ variable "nac_scheduler_name" {
   default     = ""
 }
 
-variable "azure_username" {
-  description = "Azure Subscription Scheduler User Name"
+variable "sp_application_id" {
+  description = "Azure Service Priincipal Client ID"
   type        = string
   default     = ""
 }
 
-variable "azure_password" {
-  description = "Azure Subscription Password"
+variable "sp_secret" {
+  description = "Azure Service Priincipal Secret"
   type        = string
   default     = ""
 }
@@ -98,4 +98,10 @@ variable "use_private_ip" {
 variable "search_outbound_subnet" {
   description = "Available subnet name in Virtual Network for outbound traffic integration"
   type        = string
+}
+
+variable "subscription_id" {
+  description = "Azure Subscription ID"
+  type        = string
+  default     = ""
 }

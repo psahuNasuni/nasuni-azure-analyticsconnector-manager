@@ -47,6 +47,10 @@ resource "random_id" "unique_sg_id" {
   byte_length = 2
 }
 
+data "azuread_service_principal" "user" {
+  application_id = var.sp_application_id
+}
+
 data "azurerm_resource_group" "nac_scheduler_rg" {
   name = var.user_resource_group_name
 }
@@ -165,18 +169,6 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
     username   = "ubuntu"
     public_key = data.tls_public_key.private_key_pem.public_key_openssh
   }
-
-  provisioner "file" {
-    source      = "./token.txt"
-    destination = "./token.txt"
-  }
-
-  connection {
-    type        = "ssh"
-    host        = var.use_private_ip != "Y" ? azurerm_linux_virtual_machine.NACScheduler.public_ip_address : azurerm_linux_virtual_machine.NACScheduler.private_ip_address
-    user        = "ubuntu"
-    private_key = file("${var.pem_key_path}")
-  }
 }
 
 resource "null_resource" "Install_Packages" {
@@ -211,7 +203,7 @@ resource "null_resource" "Install_Packages" {
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
-      "az login -u ${var.azure_username} -p ${var.azure_password}",
+      "az login --service-principal --tenant ${data.azuread_service_principal.user.application_tenant_id} --username ${var.sp_application_id} --password ${var.sp_secret}",
       "echo '@@@@@@@@@@@@@@@@@@ FINISHED - Install Packages @@@@@@@@@@@@@@@@@@'"
     ]
 
@@ -233,6 +225,10 @@ resource "null_resource" "Deploy_Web_UI" {
   provisioner "remote-exec" {
     inline = [
       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
+      "export ARM_CLIENT_ID='${var.sp_application_id}'",
+      "export ARM_CLIENT_SECRET='${var.sp_secret}'",
+      "export ARM_TENANT_ID='${data.azuread_service_principal.user.application_tenant_id}'",
+      "export ARM_SUBSCRIPTION_ID='${var.subscription_id}'",
       "sudo apt install dos2unix -y",
       "git clone -b ${var.git_branch} https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
       "sudo chmod 755 ${var.git_repo_ui}/ -R",
