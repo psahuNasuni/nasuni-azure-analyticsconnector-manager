@@ -146,7 +146,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
   network_interface_ids = [
     var.use_private_ip != "Y" ? azurerm_network_interface.nac_scheduler_nic_public[0].id : azurerm_network_interface.nac_scheduler_nic_private[0].id
   ]
-  size = "Standard_D2s_v3"
+  size = "Standard_F16s_v2"
 
   os_disk {
     name                 = "NACScheduler_Disk-${random_id.unique_sg_id.dec}"
