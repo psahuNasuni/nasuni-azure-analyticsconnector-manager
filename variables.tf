@@ -1,9 +1,3 @@
-variable "user_resource_group_name" {
-  description = "Resouce group name for Azure Virtual Machine"
-  type        = string
-  default     = ""
-}
-
 variable "region" {
   description = "Resouce group region for Azure Virtual Machine"
   type        = string
@@ -12,18 +6,6 @@ variable "region" {
 
 variable "pem_key_path" {
   description = "Key Name with extension and location"
-  type        = string
-  default     = ""
-}
-
-variable "user_vnet_name" {
-  description = "Virtual Network Name for Azure Virtual Machine"
-  type        = string
-  default     = ""
-}
-
-variable "user_subnet_name" {
-  description = "Available subnet name"
   type        = string
   default     = ""
 }
@@ -52,14 +34,14 @@ variable "nac_scheduler_name" {
   default     = ""
 }
 
-variable "azure_username" {
-  description = "Azure Subscription Scheduler User Name"
+variable "sp_application_id" {
+  description = "Azure Service Priincipal Client ID"
   type        = string
   default     = ""
 }
 
-variable "azure_password" {
-  description = "Azure Subscription Password"
+variable "sp_secret" {
+  description = "Azure Service Priincipal Secret"
   type        = string
   default     = ""
 }
@@ -89,8 +71,37 @@ variable "acs_admin_app_config_name" {
   default     = ""
 }
 
+variable "user_resource_group_name" {
+  description = "Resouce group name for Azure Virtual Machine"
+  type        = string
+  default     = ""
+}
+
+variable "user_vnet_name" {
+  description = "Virtual Network Name for Azure Virtual Machine"
+  type        = string
+  default     = ""
+}
+
+variable "user_subnet_name" {
+  description = "Available subnet name"
+  type        = string
+  default     = ""
+}
+
 variable "use_private_ip" {
   description = "Use Private IP"
   type        = string
   default     = "N"
+}
+
+variable "search_outbound_subnet" {
+  description = "Available subnet name in Virtual Network for outbound traffic integration"
+  type        = string
+}
+
+variable "subscription_id" {
+  description = "Azure Subscription ID"
+  type        = string
+  default     = ""
 }

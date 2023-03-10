@@ -47,6 +47,10 @@ resource "random_id" "unique_sg_id" {
   byte_length = 2
 }
 
+data "azuread_service_principal" "user" {
+  application_id = var.sp_application_id
+}
+
 data "azurerm_resource_group" "nac_scheduler_rg" {
   name = var.user_resource_group_name
 }
@@ -142,7 +146,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
   network_interface_ids = [
     var.use_private_ip != "Y" ? azurerm_network_interface.nac_scheduler_nic_public[0].id : azurerm_network_interface.nac_scheduler_nic_private[0].id
   ]
-  size = "Standard_D2s_v3"
+  size = "Standard_F16s_v2"
 
   os_disk {
     name                 = "NACScheduler_Disk-${random_id.unique_sg_id.dec}"
@@ -193,12 +197,14 @@ resource "null_resource" "Install_Packages" {
       "sudo apt install python3-testresources -y",
       "sudo apt install python3-pip -y",
       "sudo pip3 install boto3",
+      "sudo pip3 install sortedcontainers",
       "sudo pip3 install --upgrade pip",
       "sudo pip3 install --upgrade setuptools",
+      "sudo pip3 install --default-timeout=100 future",
       "echo '******************  Installing AZURE CLI ******************'",
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
-      "az login -u ${var.azure_username} -p ${var.azure_password}",
+      "az login --service-principal --tenant ${data.azuread_service_principal.user.application_tenant_id} --username ${var.sp_application_id} --password ${var.sp_secret}",
       "echo '@@@@@@@@@@@@@@@@@@ FINISHED - Install Packages @@@@@@@@@@@@@@@@@@'"
     ]
 
@@ -220,6 +226,10 @@ resource "null_resource" "Deploy_Web_UI" {
   provisioner "remote-exec" {
     inline = [
       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",
+      "export ARM_CLIENT_ID='${var.sp_application_id}'",
+      "export ARM_CLIENT_SECRET='${var.sp_secret}'",
+      "export ARM_TENANT_ID='${data.azuread_service_principal.user.application_tenant_id}'",
+      "export ARM_SUBSCRIPTION_ID='${var.subscription_id}'",
       "sudo apt install dos2unix -y",
       "git clone -b ${var.git_branch} https://github.com/${var.github_organization}/${var.git_repo_ui}.git",
       "sudo chmod 755 ${var.git_repo_ui}/ -R",
@@ -230,6 +240,11 @@ resource "null_resource" "Deploy_Web_UI" {
       "echo 'acs_admin_app_config_name=\"'\"${var.acs_admin_app_config_name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'nac_scheduler_name=\"'\"${azurerm_linux_virtual_machine.NACScheduler.name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'user_resource_group_name=\"'\"${var.user_resource_group_name}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'user_vnet_name=\"'\"${var.user_vnet_name}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'user_subnet_name=\"'\"${var.user_subnet_name}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'use_private_ip=\"'\"${var.use_private_ip}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'search_outbound_subnet=[\"${var.search_outbound_subnet}\"]' >>$UI_TFVARS_FILE",
       "echo 'INFO ::: Installing Python Dependencies'",
       "COMMAND='pip3 install  --target=./SearchFunction/.python_packages/lib/site-packages  -r ./SearchFunction/requirements.txt'",
       "$COMMAND",
