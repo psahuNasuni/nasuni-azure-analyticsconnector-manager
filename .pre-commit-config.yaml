@@ -25,5 +25,5 @@ repos:
         id: terraform_tfsec
         id: terraform_checkov
         id: terraform_wrapper_module_for_each
-        id: terrascan
-     
+       
+   
