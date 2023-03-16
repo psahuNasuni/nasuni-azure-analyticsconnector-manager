@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.16.1
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: fix-encoding-pragma
+      - id: check-ast
+      - id: debug-statements
+      - id: check-builtin-literals
+      - id: detect-private-key
+
