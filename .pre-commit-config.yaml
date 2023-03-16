@@ -12,4 +12,20 @@ repos:
       - id: debug-statements
       - id: check-builtin-literals
       - id: detect-private-key
+        
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    hooks:
+      - id: terraform_validate
+        id: terragrunt_fmt
+        id: infracost_breakdown
+        id: terraform_fmt
+        id: terraform_docs
+        id: terraform_providers_lock
+        id: terraform_tfsec
+        id: terraform_checkov
+        id: terraform_wrapper_module_for_each
+        id: terrascan
+        id: tfupdate
+        id: terraform_tflint
+        id: terraform_docs_without_aggregate_type_defaults
 
