@@ -71,7 +71,7 @@ variable "acs_admin_app_config_name" {
   default     = ""
 }
 
-variable "user_resource_group_name" {
+variable "edgeappliance_resource_group" {
   description = "Resouce group name for Azure Virtual Machine"
   type        = string
   default     = ""
@@ -102,6 +102,12 @@ variable "search_outbound_subnet" {
 
 variable "subscription_id" {
   description = "Azure Subscription ID"
+  type        = string
+  default     = ""
+}
+
+variable "networking_resource_group" {
+  description = "Resouce group of networking"
   type        = string
   default     = ""
 }
