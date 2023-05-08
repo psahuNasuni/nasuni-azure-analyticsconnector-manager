@@ -96,7 +96,7 @@ variable "use_private_ip" {
 }
 
 variable "search_outbound_subnet" {
-  description = "Available subnet name in Virtual Network for outbound traffic integration"
+  description = "Available subnet name in Virtual Network for outbound traffic integration."
   type        = string
   default     = ""
 }
