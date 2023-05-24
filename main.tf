@@ -52,18 +52,13 @@ data "azuread_service_principal" "user" {
 }
 
 data "azurerm_resource_group" "nac_scheduler_rg" {
-  name = var.user_resource_group_name
-}
-
-data "azurerm_virtual_network" "VnetToBeUsed" {
-  name                = var.user_vnet_name
-  resource_group_name = var.user_resource_group_name
+  name = var.edgeappliance_resource_group
 }
 
 data "azurerm_subnet" "azure_subnet_name" {
   name                 = var.user_subnet_name
   virtual_network_name = var.user_vnet_name
-  resource_group_name  = var.user_resource_group_name
+  resource_group_name  = var.networking_resource_group
 }
 
 data "tls_public_key" "private_key_pem" {
@@ -146,7 +141,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
   network_interface_ids = [
     var.use_private_ip != "Y" ? azurerm_network_interface.nac_scheduler_nic_public[0].id : azurerm_network_interface.nac_scheduler_nic_private[0].id
   ]
-  size = "Standard_F16s_v2"
+  size = "Standard_DS3_v2"
 
   os_disk {
     name                 = "NACScheduler_Disk-${random_id.unique_sg_id.dec}"
@@ -240,7 +235,7 @@ resource "null_resource" "Deploy_Web_UI" {
       "echo 'acs_admin_app_config_name=\"'\"${var.acs_admin_app_config_name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'nac_scheduler_name=\"'\"${azurerm_linux_virtual_machine.NACScheduler.name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'acs_resource_group=\"'\"${var.acs_resource_group}\"'\"' >>$UI_TFVARS_FILE",
-      "echo 'user_resource_group_name=\"'\"${var.user_resource_group_name}\"'\"' >>$UI_TFVARS_FILE",
+      "echo 'networking_resource_group=\"'\"${var.networking_resource_group}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'user_vnet_name=\"'\"${var.user_vnet_name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'user_subnet_name=\"'\"${var.user_subnet_name}\"'\"' >>$UI_TFVARS_FILE",
       "echo 'use_private_ip=\"'\"${var.use_private_ip}\"'\"' >>$UI_TFVARS_FILE",
