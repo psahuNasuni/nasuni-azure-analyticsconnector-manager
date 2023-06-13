@@ -152,7 +152,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
   source_image_reference {
     publisher = "Canonical"
     offer     = "UbuntuServer"
-    sku       = "20.04-lts-gen2"
+    sku       = "20_04-lts-gen2"
     version   = "latest"
   }
 
