@@ -200,6 +200,11 @@ resource "null_resource" "Install_Packages" {
       "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
       "sudo apt-get update",
       "az login --service-principal --tenant ${data.azuread_service_principal.user.application_tenant_id} --username ${var.sp_application_id} --password ${var.sp_secret}",
+      "echo '***************** Installing azcopy ************************'",
+      "wget -O azcopy_v10.tar.gz https://aka.ms/downloadazcopy-v10-linux",
+      "tar -zxf azcopy_v10.tar.gz --strip-components=1 --wildcards */azcopy",
+      "sudo mv azcopy /usr/local/bin/azcopy",
+      "azcopy --version",
       "echo '@@@@@@@@@@@@@@@@@@ FINISHED - Install Packages @@@@@@@@@@@@@@@@@@'"
     ]
 
