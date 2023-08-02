@@ -52,7 +52,7 @@ data "azuread_service_principal" "user" {
 }
 
 data "azurerm_resource_group" "nac_scheduler_rg" {
-  name = var.edgeappliance_resource_group
+  name = var.networking_resource_group
 }
 
 data "azurerm_subnet" "azure_subnet_name" {

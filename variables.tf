@@ -71,12 +71,6 @@ variable "acs_admin_app_config_name" {
   default     = ""
 }
 
-variable "edgeappliance_resource_group" {
-  description = "Resouce group name for Azure Virtual Machine"
-  type        = string
-  default     = ""
-}
-
 variable "user_vnet_name" {
   description = "Virtual Network Name for Azure Virtual Machine"
   type        = string
