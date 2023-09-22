@@ -134,29 +134,7 @@ resource "azurerm_network_interface_security_group_association" "nac_scheduler_n
   network_security_group_id = azurerm_network_security_group.NACSchedulerSecurityGroup.id
 }
 
-data "azurerm_linux_virtual_machine" "existing_vm"{
-  name                = var.nac_scheduler_name
-  resource_group_name = var.networking_resource_group
-}
-
-resource "null_resource" "conditional_import" {
-  triggers ={
-    existing_vm_resource_id = data.azurerm_linux_virtual_machine.existing_vm.id
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      # Check if the resource is already imported
-      if ! terraform state show azurerm_linux_virtual_machine.NACScheduler; then
-        terraform import azurerm_linux_virtual_machine.NACScheduler "${data.azurerm_linux_virtual_machine.existing_vm.id}"
-      fi
-    EOT
-    }
-}
-
 resource "azurerm_linux_virtual_machine" "NACScheduler" {
-  count               = data.azurerm_linux_virtual_machine.existing_vm ? 1 : 0
-  
   name                = var.nac_scheduler_name
   location            = data.azurerm_resource_group.nac_scheduler_rg.location
   resource_group_name = data.azurerm_resource_group.nac_scheduler_rg.name
@@ -186,6 +164,24 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
     username   = "ubuntu"
     public_key = data.tls_public_key.private_key_pem.public_key_openssh
   }
+}
+
+# Import the existing Azure Linux Virtual Machine into terraform state conditionally
+resource "null_resource" "import_vm" {
+  count = var.nac_scheduler_name != "" && data.azurerm_resource_group.nac_scheduler_rg.name != "" ? 1:0
+  triggers ={
+    existing_vm_resource_id = azurerm_linux_virtual_machine.NACScheduler[0].id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      # Check if the resource is already imported
+      if ! terraform state show azurerm_linux_virtual_machine.NACScheduler; then
+        terraform import azurerm_linux_virtual_machine.NACScheduler "${azurerm_linux_virtual_machine.NACScheduler[0].id}"
+      fi
+    EOT
+    }
+    depends_on = [ azurerm_linux_virtual_machine.NACScheduler ]
 }
 
 resource "null_resource" "Install_Packages" {
