@@ -181,7 +181,7 @@ resource "null_resource" "import_vm" {
         terraform import azurerm_linux_virtual_machine.NACScheduler "${azurerm_linux_virtual_machine.NACScheduler.id}"
         echo "INFO ::: Import completed successfully"
       else
-        echo "INFO ::: Then NACScheduler VM is already imported"
+        echo "INFO ::: The NACScheduler VM is already imported"
       fi
     EOT
     }
