@@ -167,7 +167,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
 }
 
 # Import the existing Azure Linux Virtual Machine into terraform state conditionally
-resource "null_resource" "import_vm" {
+/* resource "null_resource" "import_vm" {
   count = var.nac_scheduler_name != "" && data.azurerm_resource_group.nac_scheduler_rg.name != "" ? 1:0
   triggers ={
     existing_vm_resource_id = azurerm_linux_virtual_machine.NACScheduler.id
@@ -182,7 +182,7 @@ resource "null_resource" "import_vm" {
     EOT
     }
     depends_on = [ azurerm_linux_virtual_machine.NACScheduler ]
-}
+} */
 
 resource "null_resource" "Install_Packages" {
   provisioner "remote-exec" {
