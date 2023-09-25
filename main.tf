@@ -168,7 +168,7 @@ resource "azurerm_linux_virtual_machine" "NACScheduler" {
 
 # Import the existing Azure Linux Virtual Machine into terraform state conditionally
 resource "null_resource" "import_vm" {
-  count = var.nac_scheduler_name != "" && data.azurerm_resource_group.nac_scheduler_rg.name != "" ? 0:1
+  count = var.nac_scheduler_name != "" && data.azurerm_resource_group.nac_scheduler_rg.name != "" ? 1 : 0
   triggers ={
     existing_vm_resource_id = azurerm_linux_virtual_machine.NACScheduler.id
   }
@@ -177,8 +177,11 @@ resource "null_resource" "import_vm" {
     command = <<-EOT
       # Check if the resource is already imported
       if ! terraform state show azurerm_linux_virtual_machine.NACScheduler; then
+        echo "INFO ::: Importing the existing NACScheduler VM"
         terraform import azurerm_linux_virtual_machine.NACScheduler "${azurerm_linux_virtual_machine.NACScheduler.id}"
-        echo "INFO ::: Terraform imported VM resource ID into the state"
+        echo "INFO ::: Import completed successfully"
+      else
+        echo "INFO ::: Then NACScheduler VM is already imported"
       fi
     EOT
     }
