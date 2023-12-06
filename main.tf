@@ -246,6 +246,7 @@ resource "null_resource" "Install_Packages" {
 }
 
 resource "null_resource" "Deploy_Web_UI" {
+  count = var.service_name == "EXP" ? 0 : 1
   provisioner "remote-exec" {
     inline = [
       "echo '@@@@@@@@@@@@@@@@@@@@@ STARTED  - Deployment of SearchUI Web Site @@@@@@@@@@@@@@@@@@@@@@@'",

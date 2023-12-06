@@ -70,7 +70,9 @@ variable "git_repo_ui" {
 variable "git_branch" {
   default = ""
 }
-
+variable "service_name" {
+  default = ""
+}
 variable "acs_resource_group" {
   description = "acs resource group"
   default     = ""
